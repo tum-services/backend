@@ -1,10 +1,14 @@
-from typing import Set
-from urllib.parse import urljoin, urlparse
-import vector_database as db
-import validators
 import os
+import time
+from typing import Set
+from urllib.parse import urljoin, urlparse, urlunparse
+
 import requests
+import validators
 from bs4 import BeautifulSoup
+
+import vector_database as db
+
 
 def parse_urls(soup) -> Set[str]:
 	urls: Set[str] = set()
@@ -13,9 +17,10 @@ def parse_urls(soup) -> Set[str]:
 	return urls
 
 
-def refactor_links(target_url, base_url, links):
+def refactor_links(target_hostname, target_path, base_url, links):
 	refactored_links = set()
 	for link in links:
+
 		if link is None or link.startswith("#") or link.endswith(".pdf") or "typo3" in link:
 			continue
 
@@ -24,9 +29,11 @@ def refactor_links(target_url, base_url, links):
 		if not validators.url(refactored_link):
 			continue
 
+		refactored_link = refactored_link.split('#')[0]
+
 		parsed_url = urlparse(refactored_link)
 
-		if target_url in parsed_url.hostname:
+		if target_hostname in parsed_url.hostname and target_path in parsed_url.path:
 			refactored_links.add(refactored_link)
 
 	return refactored_links
@@ -38,35 +45,46 @@ def get_next_url(urls, urls_crawled):
 		if current not in urls_crawled:
 			return current
 		if len(urls) == 0:
-			return ""
+			return None
 
 
-def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000):
+def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 	urls: Set[str] = set()
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
-	TARGET_URL = "cit.tum.de"
+	TARGET_HOST = "www.cit.tum.de"
+	TARGET_PATH = "/cit/studium"
 	DIR_NAME = "sites"
 	if save_documents and not os.path.exists(f"./{DIR_NAME}"):
 		os.makedirs(f"./{DIR_NAME}")
 	count_pages = 0
 	chunks = []
 	with requests.Session() as session:
-
-		while len(urls) != 0 and count_pages < max_pages:
+		while count_pages < 1000:
+			time.sleep(1)
 			count_pages += 1
 			current_url = get_next_url(urls, urls_crawled)
-			if current_url == "":
+			if current_url is None:
 				break
 			response = session.get(url=current_url)
+
+			content_type = response.headers.get("Content-Type")
+
+			if content_type != "text/html; charset=utf-8":
+				urls_crawled.add(current_url)
+				print(f"crawled: {current_url}")
+				continue
+
+			print(f"{content_type}")
+
 			soup = BeautifulSoup(response.text, 'html.parser')
 			page_urls: Set[str] = parse_urls(soup)
-			page_urls = refactor_links(TARGET_URL, current_url, page_urls)
+			page_urls = refactor_links(TARGET_HOST, TARGET_PATH, current_url, page_urls)
 
 			urls.update(page_urls)
 			urls_crawled.add(current_url)
 
-			print(f"crawled: {current_url}...")
+			print(f"crawled: {current_url}")
 
 			filename = f"{DIR_NAME}/{current_url.replace('/', '_').replace(':', '_')}.html"
 			if save_documents:
@@ -79,8 +97,10 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000)
 	db.save_chunks(chunks)
 	print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
 
+	print(f"{urls_crawled=}")
+	print(f"{urls=}")
+	print(f"{count_pages=}")
 
-	
 
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
+	crawl("https://www.cit.tum.de/cit/studium/", max_pages=1000)
