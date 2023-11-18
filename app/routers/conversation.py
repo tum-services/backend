@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
-from ..models import Message, Conversation, ConversationSummary
+from ..models import Message, Conversation, ConversationSummary, Wizard
 from langchain.memory import ConversationSummaryMemory, ChatMessageHistory
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -18,6 +18,11 @@ prompt = """Summarize the following conversation between an user and the assista
             Focus on the needs of the user.
             {conversation}
             SUMMARY:
+        """
+
+prompt_name = """Summarize the following conversation between an user and the assistant into a title of a conversation:
+            {conversation}
+            TITLE:
         """
 
 class MessageInput(BaseModel):
@@ -47,8 +52,12 @@ async def new_conv(conv: ConversationInput) -> dict:
     chain = LLMChain(llm=OpenAI(), prompt=PromptTemplate.from_template(prompt))
     summary = chain.run(sumconv)
 
+    chain = LLMChain(llm=OpenAI(), prompt=PromptTemplate.from_template(prompt_name))
+    title = chain.run(sumconv)
+
     con_summary = ConversationSummary()
     con_summary.summary = summary
+    con_summary.title = title
     if conv.wizard_id is not None: 
         if wizards[conv.wizard_id] is None:
             raise HTTPException(status_code=404, detail="Wizard not found")
@@ -57,15 +66,14 @@ async def new_conv(conv: ConversationInput) -> dict:
         con_summary.wizard = []
         for i in range(len(conv.wizard_anwsers)):
             wiz_obj = wizards[conv.wizard_id][i]
-            wiz = {}
+            wiz = Wizard()
             if wiz_obj["type"] == "text":
-                wiz["question"] = wiz_obj["question"]
-                wiz["answer"] = conv.wizard_anwsers[i]
+                wiz.question = wiz_obj["question"]
+                wiz.answer = conv.wizard_anwsers[i]
             else:
-                wiz["question"] = wiz_obj["question"]
-                wiz["answer"] = wiz_obj["options"][int(conv.wizard_anwsers[i])]
+                wiz.question = wiz_obj["question"]
+                wiz.answer = wiz_obj["options"][int(conv.wizard_anwsers[i])]
             con_summary.wizard.append(wiz)
-
     # c.save()
     con_summary.save()
     return con_summary.to_dict()
@@ -73,4 +81,5 @@ async def new_conv(conv: ConversationInput) -> dict:
 
 @router.get("/")
 async def get_convs():
-    return ConversationSummary.collection.fetch()
+    cs =  ConversationSummary.collection.fetch()
+    return [c.to_dict() for c in cs]

@@ -4,7 +4,7 @@ from langserve import add_routes
 from rag_conversation import chain as rag_conversation_chain
 from langserve.client import RemoteRunnable
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import file, employee_conv, wizard
+from .routers import conversation, file, wizard
 
 app = FastAPI()
 
@@ -23,7 +23,7 @@ async def redirect_root_to_docs():
     return RedirectResponse("/docs") 
 
 app.include_router(file.router)
-app.include_router(employee_conv.router)
+app.include_router(conversation.router)
 app.include_router(wizard.router)
 
 
