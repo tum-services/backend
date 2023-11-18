@@ -50,7 +50,7 @@ vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
-_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in english.
+_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
 Chat History:
 {chat_history}
 Follow Up Input: {question}
@@ -58,7 +58,7 @@ Standalone question:"""  # noqa: E501
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
 
 # RAG answer synthesis prompt
-template = """Answer the question based only on the following context:
+template = """Answer the question in english based only on the following context:
 <context>
 {context}
 </context>"""

@@ -57,8 +57,11 @@ def get_documents_sidebar(soup, url, title, ignore):
     sidebar = soup.find("div", class_="sidebar")
     if sidebar is None:
         return []
-    top_layer_divs = [child for child in sidebar.children if
+    aside_elements = [child for child in sidebar.children if
                       child.name == 'aside' and not (ignore & set(child.get('class', [])))]
+    top_layer_divs = []
+    for aside in aside_elements:
+        top_layer_divs += aside.find_all('div')
     return get_documents(sidebar, soup, url, title, top_layer_divs, False)
 
 
@@ -84,13 +87,13 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
         description = get_description(whole_soup, top_layer_divs[i])
         text = ""
         if heading:
-            text = "HEADINGS: " + description + "\n"
+            text = "\nDescription: " + description + "\n"
         for j in range(i, min(i + overlapping, len(top_layer_divs))):
-            text += "PARAGRAPH: " + top_layer_divs[j].text.strip() + "\n"
+            text += "\nText: " + str(top_layer_divs[j]) + "\n"
         text = fix_whitespaces(text)
         document = Document(
             page_content=text,
-            metadata={"source": url, "description": description, "title": title, "text": description + "\n" + text}
+            metadata={"source": url, "description": description, "title": title, "text":  text}
         )
         documents.append(document)
     return documents
