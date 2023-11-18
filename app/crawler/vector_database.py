@@ -20,11 +20,11 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 
 def fix_whitespaces(text):
-    text = re.sub(' {2,}',' ', text)
-    text = re.sub('\n{2,}','\n', text)
-    text = re.sub('\r{2,}',' ', text)
-    text = re.sub('\t{2,}',' ', text)
-    return text
+    text = re.sub('\r',' ', text)
+    text = re.sub('\t',' ', text)
+    text = re.sub('\n{2,}', ' ', text)
+    return re.sub(' {2,}', ' ', text)
+
 
 def save_chunks(documents):
     vectorstore = Pinecone.from_documents(
@@ -32,6 +32,34 @@ def save_chunks(documents):
     )
     retriever = vectorstore.as_retriever()
     return retriever
+
+
+def get_description(whole_soup, div):
+    headings = []
+    if whole_soup.find("nav", class_='breadcrumbs').find_all('li') is not None:
+        headings += [breadcrumbs.text for breadcrumbs in whole_soup.find("nav", class_='breadcrumbs').find_all('li')]
+    if whole_soup.find('h1') is not None:
+        headings.append(whole_soup.find('h1').text)
+    headings += [div.find_previous(h).text for h in ['h2', 'h3', 'h4', 'h5', 'h6'] if
+                 div.find_previous(h) is not None]
+    description = ">".join(headings)
+    return fix_whitespaces(description)
+
+
+def get_documents_content(soup, url, title, ignore):
+    content = soup.find("div", class_="content")
+    top_layer_divs = [child for child in content.children if
+                      child.name == 'div' and not (ignore & set(child.get('class', [])))]
+    return get_documents(content, soup, url, title, top_layer_divs)
+
+
+def get_documents_sidebar(soup, url, title, ignore):
+    sidebar = soup.find("div", class_="sidebar")
+    if sidebar is None:
+        return []
+    top_layer_divs = [child for child in sidebar.children if
+                      child.name == 'aside' and not (ignore & set(child.get('class', [])))]
+    return get_documents(sidebar, soup, url, title, top_layer_divs, False)
 
 
 def get_chunk(website, url):
@@ -42,34 +70,24 @@ def get_chunk(website, url):
     else:
         title = soup.find("title").text.strip()
     ignore = {"frame-type-carousel"}
-    content = soup.find("div", class_="content")
-    documents += get_documents(content, soup, url, title, ignore)
-    sidebar = soup.find("div", class_="sidebar")
-    documents += get_documents(sidebar, soup, url, title, ignore)
+    documents += get_documents_content(soup, url, title, ignore)
+    documents += get_documents_sidebar(soup, url, title, ignore)
     return documents
 
 
-def get_documents(current_soup, whole_soup, url, title, ignore):
+def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=True, overlapping=1):
     documents = []
     if current_soup is None:
         return documents
-    top_layer_divs = [child for child in current_soup.children if child.name == 'div' and not (ignore & set(child.get('class', [])))]
-    OVERLAPPING = 1
+
     for i in range(len(top_layer_divs)):
-        headings = []
-        if whole_soup.find("nav", class_='breadcrumbs').child is not None:
-            headings += [breadcrumbs.text for breadcrumbs in whole_soup.find("nav", class_='breadcrumbs').find_all('li')]
-        if whole_soup.find('h1') is not None:
-            headings.append(whole_soup.find('h1').text)
-        headings += [top_layer_divs[i].find_previous(h).text for h in ['h2', 'h3', 'h4', 'h5', 'h6'] if
-                     top_layer_divs[i].find_previous(h) is not None]
-        description = ">".join(headings)
-        description = fix_whitespaces(description)
-        text = "HEADINGS: " + description + "\n"
-        for j in range(i, min(i + OVERLAPPING, len(top_layer_divs))):
+        description = get_description(whole_soup, top_layer_divs[i])
+        text = ""
+        if heading:
+            text = "HEADINGS: " + description + "\n"
+        for j in range(i, min(i + overlapping, len(top_layer_divs))):
             text += "PARAGRAPH: " + top_layer_divs[j].text.strip() + "\n"
         text = fix_whitespaces(text)
-
         document = Document(
             page_content=text,
             metadata={"source": url, "description": description, "title": title, "text": description + "\n" + text}
