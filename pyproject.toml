@@ -14,6 +14,8 @@ uvicorn = "^0.23.2"
 langserve = {extras = ["server"], version = ">=0.0.22"}
 pydantic = "<2"
 rag-conversation = {path = "packages/rag-conversation", develop = true}
+fireo = "^2.2.1"
+python-multipart = "^0.0.6"
 
 
 [tool.poetry.group.dev.dependencies]
