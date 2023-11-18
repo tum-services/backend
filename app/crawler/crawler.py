@@ -1,6 +1,6 @@
 from typing import Set
 from urllib.parse import urljoin, urlparse
-import vector_database
+import vector_database as db
 import validators
 import os
 import requests
@@ -73,8 +73,8 @@ def crawl(start_url: str, save_documents: bool = False):
 					file.write(response.text)
 				print(f"Content written to {filename}")
 
-			setup.save_website(response.text, current_url)
-			print(f"Content saved to pinecone index {setup.PINECONE_INDEX_NAME}")
+			db.save_website(response.text, current_url)
+			print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
 
 
 	
