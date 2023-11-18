@@ -104,4 +104,4 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 
 
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/studiengaenge/bachelor-informatik/", max_pages=100)
+	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
