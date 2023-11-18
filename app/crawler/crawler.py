@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Set
 from urllib.parse import urljoin, urlparse, urlunparse
 
@@ -59,12 +60,23 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 	count_pages = 0
 	chunks = []
 	with requests.Session() as session:
-		while count_pages < max_pages:
+		while count_pages < 1000:
+			time.sleep(1)
 			count_pages += 1
 			current_url = get_next_url(urls, urls_crawled)
 			if current_url is None:
 				break
 			response = session.get(url=current_url)
+
+			content_type = response.headers.get("Content-Type")
+
+			if content_type != "text/html; charset=utf-8":
+				urls_crawled.add(current_url)
+				print(f"crawled: {current_url}")
+				continue
+
+			print(f"{content_type}")
+
 			soup = BeautifulSoup(response.text, 'html.parser')
 			page_urls: Set[str] = parse_urls(soup)
 			page_urls = refactor_links(TARGET_HOST, TARGET_PATH, current_url, page_urls)
@@ -93,4 +105,4 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 
 
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
+	crawl("https://www.cit.tum.de/cit/studium/", max_pages=1000)
