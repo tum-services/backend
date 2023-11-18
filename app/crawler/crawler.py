@@ -1,10 +1,11 @@
 from typing import Set
 from urllib.parse import urljoin, urlparse
+import vector_database
 import validators
 import os
 import requests
 from bs4 import BeautifulSoup
-
+import pinecone
 
 def parse_urls(soup) -> Set[str]:
 	urls: Set[str] = set()
@@ -16,11 +17,14 @@ def parse_urls(soup) -> Set[str]:
 def refactor_links(target_url, base_url, links):
 	refactored_links = set()
 	for link in links:
-
-		if not validators.url(link):
+		if link is None or link.startswith("#") or link.endswith(".pdf") or "typo3" in link:
 			continue
 
 		refactored_link = urljoin(base_url, link)
+
+		if not validators.url(refactored_link):
+			continue
+
 		parsed_url = urlparse(refactored_link)
 
 		if target_url in parsed_url.hostname:
@@ -38,13 +42,14 @@ def get_next_url(urls, urls_crawled):
 			return ""
 
 
-def crawl(start_url: str):
+def crawl(start_url: str, save_documents: bool = False):
 	urls: Set[str] = set()
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
 	TARGET_URL = "cit.tum.de"
 	DIR_NAME = "sites"
-	os.makedirs(f"./{DIR_NAME}")
+	if save_documents and not os.path.exists(f"./{DIR_NAME}"):
+		os.makedirs(f"./{DIR_NAME}")
 
 	with requests.Session() as session:
 		while len(urls) != 0:
@@ -61,13 +66,18 @@ def crawl(start_url: str):
 
 			print(f"crawled: {current_url}...")
 
-			# Create a new file for each URL and write the content
 			filename = f"{DIR_NAME}/{current_url.replace('/', '_').replace(':', '_')}.html"
-			with open(filename, 'w', encoding='utf-8') as file:
-				file.write(response.text)
+			if save_documents and os.path.exists(filename):
+				os.remove(filename)
+				with open(filename, 'w', encoding='utf-8') as file:
+					file.write(response.text)
+				print(f"Content written to {filename}")
 
-			print(f"Content written to {filename}")
+			setup.save_website(response.text, current_url)
+			print(f"Content saved to pinecone index {setup.PINECONE_INDEX_NAME}")
 
+
+	
 
 if __name__ == '__main__':
 	crawl("https://www.cit.tum.de/cit/studium/")
