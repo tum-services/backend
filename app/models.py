@@ -37,6 +37,7 @@ class Wizard(Model):
     answer = TextField()
 
 class ConversationSummary(Model):
+    title = TextField()
     summary = TextField()
     wizard = ListField(NestedModelField(Wizard))
 

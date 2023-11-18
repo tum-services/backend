@@ -20,6 +20,11 @@ prompt = """Summarize the following conversation between an user and the assista
             SUMMARY:
         """
 
+prompt_name = """Summarize the following conversation between an user and the assistant into a title of a conversation:
+            {conversation}
+            TITLE:
+        """
+
 class MessageInput(BaseModel):
     content: str
     author: str # User or Bot
@@ -47,8 +52,12 @@ async def new_conv(conv: ConversationInput) -> dict:
     chain = LLMChain(llm=OpenAI(), prompt=PromptTemplate.from_template(prompt))
     summary = chain.run(sumconv)
 
+    chain = LLMChain(llm=OpenAI(), prompt=PromptTemplate.from_template(prompt_name))
+    title = chain.run(sumconv)
+
     con_summary = ConversationSummary()
     con_summary.summary = summary
+    con_summary.title = title
     if conv.wizard_id is not None: 
         if wizards[conv.wizard_id] is None:
             raise HTTPException(status_code=404, detail="Wizard not found")
@@ -65,7 +74,6 @@ async def new_conv(conv: ConversationInput) -> dict:
                 wiz.question = wiz_obj["question"]
                 wiz.answer = wiz_obj["options"][int(conv.wizard_anwsers[i])]
             con_summary.wizard.append(wiz)
-        print(con_summary.wizard)
     # c.save()
     con_summary.save()
     return con_summary.to_dict()
