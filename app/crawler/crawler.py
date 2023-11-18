@@ -47,7 +47,7 @@ def get_next_url(urls, urls_crawled):
 			return None
 
 
-def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000):
+def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 	urls: Set[str] = set()
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
@@ -59,7 +59,7 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000)
 	count_pages = 0
 	chunks = []
 	with requests.Session() as session:
-		while len(urls) != 0 and count_pages < max_pages:
+		while count_pages < max_pages:
 			count_pages += 1
 			current_url = get_next_url(urls, urls_crawled)
 			if current_url is None:
@@ -89,6 +89,7 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000)
 
 	print(f"{urls_crawled=}")
 	print(f"{urls=}")
+	print(f"{count_pages=}")
 
 
 if __name__ == '__main__':
