@@ -3,8 +3,18 @@ from fastapi.responses import RedirectResponse
 from langserve import add_routes
 from rag_conversation import chain as rag_conversation_chain
 from langserve.client import RemoteRunnable
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
