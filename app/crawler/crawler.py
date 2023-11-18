@@ -67,8 +67,9 @@ def crawl(start_url: str, save_documents: bool = False):
 			print(f"crawled: {current_url}...")
 
 			filename = f"{DIR_NAME}/{current_url.replace('/', '_').replace(':', '_')}.html"
-			if save_documents and os.path.exists(filename):
-				os.remove(filename)
+			if save_documents:
+				if os.path.exists(filename):
+					os.remove(filename)
 				with open(filename, 'w', encoding='utf-8') as file:
 					file.write(response.text)
 				print(f"Content written to {filename}")
