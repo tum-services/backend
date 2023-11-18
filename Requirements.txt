@@ -3,3 +3,4 @@ validators
 requests
 beautifulsoup4
 langchain-cli
+markdownify

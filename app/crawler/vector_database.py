@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
 import re
+import copy
 import os
 from langchain.vectorstores import Pinecone
 from langchain.vectorstores.pinecone import Document
 from langchain.embeddings import OpenAIEmbeddings
+import markdownify
 from langchain.document_loaders import WebBaseLoader
 from os import listdir
 from os.path import isfile, join
@@ -89,7 +91,16 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
         if heading:
             text = "\nDescription: " + description + "\n"
         for j in range(i, min(i + overlapping, len(top_layer_divs))):
-            text += "\nText: " + str(top_layer_divs[j]) + "\n"
+            tables = top_layer_divs[j].find_all('table')
+            for table in tables:
+                #table_original = copy.copy(table)
+                #for a in table_original.find_all('a'):
+                #    a.replace_with(a.text)
+                markdown_table = markdownify.markdownify(str(table))
+                text += markdown_table.replace('\\*', '')
+                table.decompose()
+
+            text += "\nText: " + top_layer_divs[j].text + "\n"
         text = fix_whitespaces(text)
         document = Document(
             page_content=text,
