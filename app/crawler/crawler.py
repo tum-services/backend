@@ -5,7 +5,6 @@ import validators
 import os
 import requests
 from bs4 import BeautifulSoup
-import pinecone
 
 def parse_urls(soup) -> Set[str]:
 	urls: Set[str] = set()
@@ -42,7 +41,7 @@ def get_next_url(urls, urls_crawled):
 			return ""
 
 
-def crawl(start_url: str, save_documents: bool = False):
+def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000):
 	urls: Set[str] = set()
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
@@ -50,9 +49,12 @@ def crawl(start_url: str, save_documents: bool = False):
 	DIR_NAME = "sites"
 	if save_documents and not os.path.exists(f"./{DIR_NAME}"):
 		os.makedirs(f"./{DIR_NAME}")
-
+	count_pages = 0
+	chunks = []
 	with requests.Session() as session:
-		while len(urls) != 0:
+
+		while len(urls) != 0 and count_pages < max_pages:
+			count_pages += 1
 			current_url = get_next_url(urls, urls_crawled)
 			if current_url == "":
 				break
@@ -74,11 +76,13 @@ def crawl(start_url: str, save_documents: bool = False):
 					file.write(response.text)
 				print(f"Content written to {filename}")
 
-			db.save_website(response.text, current_url)
-			print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
+		chunks += db.get_chunk(response.text, current_url)
+
+	db.save_chunks(chunks)
+	print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
 
 
 	
 
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/")
+	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)

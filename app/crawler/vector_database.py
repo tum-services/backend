@@ -19,7 +19,7 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 
-def save_documents(documents):
+def save_chunks(documents):
     vectorstore = Pinecone.from_documents(
         documents=documents, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
     )
@@ -27,27 +27,25 @@ def save_documents(documents):
     return retriever
 
 
-def save_website(website, url):
+def get_chunk(website, url):
     soup = BeautifulSoup(website, 'html.parser')
     documents = []
     paragraphs = soup.find_all("p")
 
     title = soup.find("title").text.strip()
     for paragraph in paragraphs:
-        heading = paragraph.find_previous(re.compile('^h[1-6]$'))
+        description = paragraph.find_previous(re.compile('^h[1-6]$'))
         paragraph = paragraph.text.strip()
-        if heading is not None:
-            heading = heading.text.strip()
+        if description is not None:
+            description = description.text.strip()
         else:
-            heading = title
+            description = title
         document = Document(
-            page_content=paragraph,
-            metadata={"source": url, "description": heading, "title": title, "text": paragraph}
+            page_content=website,
+            metadata={"source": url, "description": description, "title": title, "text": paragraph}
         )
         documents.append(document)
-    return save_documents(documents)
-
-
+    return documents
 
 #if __name__ == '__main__':
 #    files = [f for f in listdir(PATH) if isfile(join(PATH, f))]
