@@ -95,13 +95,18 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 					file.write(response.text)
 				print(f"Content written to {filename}")
 			chunks += db.get_chunk(response.text, current_url)
-	db.save_chunks(chunks)
-	print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
+	return chunks
 
 	print(f"{urls_crawled=}")
 	print(f"{urls=}")
 	print(f"{count_pages=}")
 
 
+
+
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
+	chunks = crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
+	# chunks += db.absence_chunks()
+	db.save_chunks(chunks)
+
+

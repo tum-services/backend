@@ -58,7 +58,7 @@ Standalone question:"""  # noqa: E501
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
 
 # RAG answer synthesis prompt
-template = """Answer the question in english based only on the following context:
+template = """Answer the question based only on the following context:
 <context>
 {context}
 </context>"""
