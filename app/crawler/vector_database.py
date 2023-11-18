@@ -94,13 +94,12 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
         for j in range(i, min(i + overlapping, len(top_layer_divs))):
             tables = top_layer_divs[j].find_all('table')
             for table in tables:
-                #table_original = copy.copy(table)
-                #for a in table_original.find_all('a'):
-                #    a.replace_with(a.text)
-                markdown_table = markdownify.markdownify(str(table))
-                text += markdown_table.replace('\\*', '')
-                table.decompose()
-
+                try:
+                    markdown_table = markdownify.markdownify(str(table))
+                    text += markdown_table.replace('\\*', '')
+                    table.decompose()
+                except TypeError:
+                    pass
             text += "\nText: " + top_layer_divs[j].text + "\n"
         text = fix_whitespaces(text)
         document = Document(
@@ -113,40 +112,15 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
 
 def absence_chunks():
     url = "https://www.tum.de/studium/im-studium/das-studium-organisieren/beurlaubung"
-    description = "Beurlaubung\nLeave of absence\n"
+    description = "Beurlaubung\nLeave of absence\nAntrag auf Urlaub"
     text = description + '''
-        Beurlaubungsantrag starten.
-        Ich benötige eine Beurlaubung. Hilfe?
-        Antrag auf Beurlaubung beginnen.
-        Wie beantrage ich eine Auszeit?
-        Beurlaubung beantragen, bitte.
-        Hilfe bei Beurlaubungsantrag.
-        Antrag auf Beurlaubung starten.
-        Kannst du mir beim Beurlaubungsantrag helfen?
-        Ich will eine Pause. Wie geht das?
-        Beurlaubung: Wie geht's?
-        Beurlaubungsantrag starten.
-        Ich benötige eine Auszeit. Wie stelle ich einen Beurlaubungsantrag?
-        Hilfe bei Beurlaubungsgesuch.
-        Wie beurlaube ich mich?
-        Antrag auf Beurlaubung beginnen.
-        Bitte Beurlaubung unterstützen.
-        Wie fülle ich den Beurlaubungsantrag aus?
-        Beurlaubung beantragen.
-        Kannst du mir beim Beurlaubungsantrag helfen?
-        Beurlaubungsformular öffnen.
-        Start leave request.'''
+        In diesem Chat kannst du eine Beurlaubung beantragen.'''
     title = "Beurlaubung"
-    text2 = '''Urlaubsantrag Antrag auf Urlaub starten Beurlaubung Leave of absence'''
     doc1 = Document(
         page_content=text,
         metadata={"source": url, "description": description, "title": title, "text": text, "wizzard": 0}
     )
-    doc2 = Document(
-        page_content=text2,
-        metadata={"source": url, "description": description, "title": title, "text": text2, "wizzard": 1}
-    )
-    return [doc1, doc2]
+    return [doc1]
 
 #if __name__ == '__main__':
 #    files = [f for f in listdir(PATH) if isfile(join(PATH, f))]
