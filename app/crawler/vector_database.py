@@ -20,8 +20,8 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 
 def fix_whitespaces(text):
-    text = re.sub('\r',' ', text)
-    text = re.sub('\t',' ', text)
+    text = re.sub('\r{2,}',' ', text)
+    text = re.sub('\t{2,}',' ', text)
     text = re.sub('\n{2,}', ' ', text)
     return re.sub(' {2,}', ' ', text)
 
