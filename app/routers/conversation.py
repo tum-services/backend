@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
-from ..models import Message, Conversation, ConversationSummary
+from ..models import Message, Conversation, ConversationSummary, Wizard
 from langchain.memory import ConversationSummaryMemory, ChatMessageHistory
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -57,15 +57,15 @@ async def new_conv(conv: ConversationInput) -> dict:
         con_summary.wizard = []
         for i in range(len(conv.wizard_anwsers)):
             wiz_obj = wizards[conv.wizard_id][i]
-            wiz = {}
+            wiz = Wizard()
             if wiz_obj["type"] == "text":
-                wiz["question"] = wiz_obj["question"]
-                wiz["answer"] = conv.wizard_anwsers[i]
+                wiz.question = wiz_obj["question"]
+                wiz.answer = conv.wizard_anwsers[i]
             else:
-                wiz["question"] = wiz_obj["question"]
-                wiz["answer"] = wiz_obj["options"][int(conv.wizard_anwsers[i])]
+                wiz.question = wiz_obj["question"]
+                wiz.answer = wiz_obj["options"][int(conv.wizard_anwsers[i])]
             con_summary.wizard.append(wiz)
-
+        print(con_summary.wizard)
     # c.save()
     con_summary.save()
     return con_summary.to_dict()
@@ -73,4 +73,5 @@ async def new_conv(conv: ConversationInput) -> dict:
 
 @router.get("/")
 async def get_convs():
-    return ConversationSummary.collection.fetch()
+    cs =  ConversationSummary.collection.fetch()
+    return [c.to_dict() for c in cs]

@@ -1,6 +1,6 @@
 from fireo.models import Model
 from fireo.typedmodels import TypedModel
-from fireo.fields import TextField, DateTime, ListField, IDField, ReferenceField, Field, NestedModel
+from fireo.fields import TextField, DateTime, ListField, IDField, ReferenceField, Field, NestedModelField
 
 
 class FileAttachment(Model):
@@ -26,7 +26,7 @@ class Message(Model):
 class Conversation(Model):
     employee_id = TextField()
     user_id = TextField()
-    conversation = ListField(NestedModel(Message))
+    conversation = ListField(NestedModelField(Message))
 # class Conversation(TypedModel):
 #     employee_id: str
 #     user_id: str
@@ -38,6 +38,6 @@ class Wizard(Model):
 
 class ConversationSummary(Model):
     summary = TextField()
-    wizard = ListField(NestedModel(Wizard))
+    wizard = ListField(NestedModelField(Wizard))
 
 
