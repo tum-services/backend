@@ -5,8 +5,6 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-urls = []
-
 
 def parse_urls(soup) -> Set[str]:
 	urls: Set[str] = set()
@@ -24,6 +22,7 @@ def refactor_links(target_url, base_url, links):
 
 		refactored_link = urljoin(base_url, link)
 		parsed_url = urlparse(refactored_link)
+
 		if target_url in parsed_url.hostname:
 			refactored_links.add(refactored_link)
 
@@ -44,7 +43,8 @@ def crawl(start_url: str):
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
 	TARGET_URL = "cit.tum.de"
-	os.makedirs("./sites")
+	DIR_NAME = "sites"
+	os.makedirs(f"./{DIR_NAME}")
 
 	with requests.Session() as session:
 		while len(urls) != 0:
@@ -62,7 +62,7 @@ def crawl(start_url: str):
 			print(f"crawled: {current_url}...")
 
 			# Create a new file for each URL and write the content
-			filename = f"sites/{current_url.replace('/', '_').replace(':', '_')}.html"
+			filename = f"{DIR_NAME}/{current_url.replace('/', '_').replace(':', '_')}.html"
 			with open(filename, 'w', encoding='utf-8') as file:
 				file.write(response.text)
 
