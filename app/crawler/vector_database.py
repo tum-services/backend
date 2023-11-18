@@ -96,7 +96,6 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
             metadata={"source": url, "description": description, "title": title, "text":  text}
         )
         documents.append(document)
-        print(description + text)
     return documents
 
 
