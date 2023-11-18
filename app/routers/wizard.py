@@ -38,7 +38,7 @@ wizards = [
                 "Formation of a company",
                 "Other"
             ],
-            "validation": "^[0-6]+$"
+            "validation": "^[0-6]$"
         }
     ]
 ]
