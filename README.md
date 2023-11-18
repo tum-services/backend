@@ -2,6 +2,13 @@
 
 ## Installation
 
+python package installation
+
+```bash
+pip install -r requirements.txt
+```
+
+
 Install the LangChain CLI if you haven't yet
 
 ```bash
