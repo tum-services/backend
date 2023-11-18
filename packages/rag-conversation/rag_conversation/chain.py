@@ -27,26 +27,30 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 ### Ingest code - you may need to run this the first time
 # # Load
-# from langchain.document_loaders import WebBaseLoader
-# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-# data = loader.load()
+from langchain.document_loaders import WebBaseLoader
+
+loader = WebBaseLoader("https://www.cit.tum.de/cit/startseite/")
+data = loader.load()
+#print(data)
+
 
 # # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-# text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-# all_splits = text_splitter.split_documents(data)
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
-# vectorstore = Pinecone.from_documents(
-#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
-# )
-# retriever = vectorstore.as_retriever()
+#vectorstore = Pinecone.from_documents(
+#    documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
+#)
+#retriever = vectorstore.as_retriever()
 
 vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
-_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in english.
 Chat History:
 {chat_history}
 Follow Up Input: {question}
@@ -101,7 +105,7 @@ _search_query = RunnableBranch(
             chat_history=lambda x: _format_chat_history(x["chat_history"])
         )
         | CONDENSE_QUESTION_PROMPT
-        | ChatOpenAI(temperature=0)
+        | ChatOpenAI(temperature=0, model="gpt-3.5-turbo-instruct")
         | StrOutputParser(),
     ),
     # Else, we have no chat history, so just pass through the question
