@@ -75,9 +75,7 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 100000)
 				with open(filename, 'w', encoding='utf-8') as file:
 					file.write(response.text)
 				print(f"Content written to {filename}")
-
-		chunks += db.get_chunk(response.text, current_url)
-
+			chunks += db.get_chunk(response.text, current_url)
 	db.save_chunks(chunks)
 	print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
 

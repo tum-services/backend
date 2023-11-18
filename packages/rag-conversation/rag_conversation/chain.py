@@ -44,10 +44,10 @@ all_splits = text_splitter.split_documents(data)
 #vectorstore = Pinecone.from_documents(
 #    documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
 #)
-retriever = vectorstore.as_retriever()
-
-#vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
 #retriever = vectorstore.as_retriever()
+
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
 _template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
