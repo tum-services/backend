@@ -54,7 +54,7 @@ def get_documents(current_soup, whole_soup, url, title, ignore):
     if current_soup is None:
         return documents
     top_layer_divs = [child for child in current_soup.children if child.name == 'div' and not (ignore & set(child.get('class', [])))]
-    OVER_LAPPING = 3
+    OVERLAPPING = 1
     for i in range(len(top_layer_divs)):
         headings = []
         if whole_soup.find("nav", class_='breadcrumbs').child is not None:
@@ -66,7 +66,7 @@ def get_documents(current_soup, whole_soup, url, title, ignore):
         description = ">".join(headings)
         description = fix_whitespaces(description)
         text = "HEADINGS: " + description + "\n"
-        for j in range(i, min(i + OVER_LAPPING, len(top_layer_divs))):
+        for j in range(i, min(i + OVERLAPPING, len(top_layer_divs))):
             text += "PARAGRAPH: " + top_layer_divs[j].text.strip() + "\n"
         text = fix_whitespaces(text)
 
@@ -74,7 +74,6 @@ def get_documents(current_soup, whole_soup, url, title, ignore):
             page_content=text,
             metadata={"source": url, "description": description, "title": title, "text": description + "\n" + text}
         )
-        print(description + "\n" + text)
         documents.append(document)
     return documents
 

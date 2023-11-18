@@ -60,9 +60,10 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 	count_pages = 0
 	chunks = []
 	with requests.Session() as session:
-		while count_pages < 1000:
+		while count_pages < max_pages:
 			time.sleep(1)
 			count_pages += 1
+			print(count_pages)
 			current_url = get_next_url(urls, urls_crawled)
 			if current_url is None:
 				break
@@ -103,4 +104,4 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 
 
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/", max_pages=1000)
+	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
