@@ -2,6 +2,7 @@ import os
 import time
 from typing import Set
 from urllib.parse import urljoin, urlparse, urlunparse
+from tqdm import tqdm
 
 import requests
 import validators
@@ -48,22 +49,17 @@ def get_next_url(urls, urls_crawled):
 			return None
 
 
-def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
+def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000, target_host: str = "www.cit.tum.de", target_path: str = "/cit"):
 	urls: Set[str] = set()
 	urls_crawled: Set[str] = set()
 	urls.add(start_url)
-	TARGET_HOST = "www.cit.tum.de"
-	TARGET_PATH = "/cit/studium"
 	DIR_NAME = "sites"
 	if save_documents and not os.path.exists(f"./{DIR_NAME}"):
 		os.makedirs(f"./{DIR_NAME}")
-	count_pages = 0
 	chunks = []
 	with requests.Session() as session:
-		while count_pages < max_pages:
-			time.sleep(1)
-			count_pages += 1
-			print(count_pages)
+		for count_pages in tqdm(range(max_pages)):
+
 			current_url = get_next_url(urls, urls_crawled)
 			if current_url is None:
 				break
@@ -73,19 +69,14 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 
 			if content_type != "text/html; charset=utf-8":
 				urls_crawled.add(current_url)
-				print(f"crawled: {current_url}")
 				continue
-
-			print(f"{content_type}")
 
 			soup = BeautifulSoup(response.text, 'html.parser')
 			page_urls: Set[str] = parse_urls(soup)
-			page_urls = refactor_links(TARGET_HOST, TARGET_PATH, current_url, page_urls)
+			page_urls = refactor_links(target_host, target_path, current_url, page_urls)
 
 			urls.update(page_urls)
 			urls_crawled.add(current_url)
-
-			print(f"crawled: {current_url}")
 
 			filename = f"{DIR_NAME}/{current_url.replace('/', '_').replace(':', '_')}.html"
 			if save_documents:
@@ -93,15 +84,19 @@ def crawl(start_url: str, save_documents: bool = False, max_pages: int = 1000):
 					os.remove(filename)
 				with open(filename, 'w', encoding='utf-8') as file:
 					file.write(response.text)
-				print(f"Content written to {filename}")
 			chunks += db.get_chunk(response.text, current_url)
-	db.save_chunks(chunks)
-	print(f"Content saved to pinecone index {db.PINECONE_INDEX_NAME}")
+	return chunks
 
 	print(f"{urls_crawled=}")
 	print(f"{urls=}")
 	print(f"{count_pages=}")
 
 
+
+
 if __name__ == '__main__':
-	crawl("https://www.cit.tum.de/cit/studium/", max_pages=100)
+	chunks = crawl("https://www.cit.tum.de/cit/studium", max_pages=5000, target_path="/cit/")
+	chunks += db.absence_chunks()
+	db.save_chunks(chunks)
+
+

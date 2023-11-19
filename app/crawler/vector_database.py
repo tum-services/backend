@@ -33,6 +33,7 @@ def save_chunks(documents):
         documents=documents, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
     )
     retriever = vectorstore.as_retriever()
+    print(f"Content saved to pinecone index {PINECONE_INDEX_NAME}")
     return retriever
 
 
@@ -93,13 +94,12 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
         for j in range(i, min(i + overlapping, len(top_layer_divs))):
             tables = top_layer_divs[j].find_all('table')
             for table in tables:
-                #table_original = copy.copy(table)
-                #for a in table_original.find_all('a'):
-                #    a.replace_with(a.text)
-                markdown_table = markdownify.markdownify(str(table))
-                text += markdown_table.replace('\\*', '')
-                table.decompose()
-
+                try:
+                    markdown_table = markdownify.markdownify(str(table))
+                    text += markdown_table.replace('\\*', '')
+                    table.decompose()
+                except TypeError:
+                    pass
             text += "\nText: " + top_layer_divs[j].text + "\n"
         text = fix_whitespaces(text)
         document = Document(
@@ -110,6 +110,17 @@ def get_documents(current_soup, whole_soup, url, title, top_layer_divs, heading=
     return documents
 
 
+def absence_chunks():
+    url = "https://www.tum.de/studium/im-studium/das-studium-organisieren/beurlaubung"
+    description = "Beurlaubung\nLeave of absence\nAntrag auf Urlaub"
+    text = description + '''
+        In diesem Chat kannst du eine Beurlaubung beantragen.'''
+    title = "Beurlaubung"
+    doc1 = Document(
+        page_content=text,
+        metadata={"source": url, "description": description, "title": title, "text": text, "wizzard": 0}
+    )
+    return [doc1]
 
 #if __name__ == '__main__':
 #    files = [f for f in listdir(PATH) if isfile(join(PATH, f))]
