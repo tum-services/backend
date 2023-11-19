@@ -129,11 +129,10 @@ room_prompt = """Keep everything between <> exactly the same. This is current da
 """
 
 
-def create_date_string(weeks, max_dishes=4):
+def create_date_string(week, max_dishes=4):
     days = []
-    for week in weeks:
-        for day in week["days"]:
-            days.append(day)
+    for day in week["days"]:
+        days.append(day)
     ret = ""
     for day in days:
         if day["date"] >= datetime.datetime.today().strftime("%Y-%m-%d"):
@@ -156,8 +155,7 @@ def create_room_data_string(room_data, max=15):
 
 
 mensa_data = json.loads(requests.get(
-    "https://menu.tum.sexy/_next/data/b6k1mCvyQ9LCiKmF_t8Nd/de/mensa-garching.json?locale=de&id=mensa-garching").text)[
-    "pageProps"]["foodPlaceMenu"]["weeks"]
+    "https://tum-dev.github.io/eat-api/en/mensa-garching/2023/47.json").text)
 mensa_data_str = json.dumps(create_date_string(mensa_data), indent=4)
 
 datetime.datetime.today().strftime("%Y-%m-%d")
