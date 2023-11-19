@@ -1,4 +1,7 @@
+import datetime
+import json
 import os
+import requests
 from operator import itemgetter
 from typing import List, Tuple
 
@@ -94,6 +97,39 @@ class ChatHistory(BaseModel):
     chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
     question: str
 
+# RAG Conversation Chain
+# TODO: Add a branch for the case where the input is about the mensa menu of the day
+  
+is_mensa_chain = (
+    PromptTemplate.from_template(
+        template="""Given the following input, determine if the input is about the menu in the mensa.
+Only answer with "yes" or "no".
+Input: {question}
+Answer:"""
+    )
+)
+
+mensa_prompt = """Given the following input, answer the question based only on the following meal plan for the next week and the provided day:
+<meal plan>
+    {context}
+</meal plan>
+Current Day: {day}
+"""
+
+def create_date_string(weeks):
+    days = []
+    for week in weeks:
+        for day in week["days"]:
+            days.append(day)
+    ret = ""
+    for day in days:
+        if day["date"] >= datetime.datetime.today().strftime("%Y-%m-%d"):
+            reduced = ""
+            for dish in day["dishes"]:
+                reduced += dish["name"] + ", "
+            ret += f"{day['date']}: {reduced[:-2]}\n\n"
+    return ret
+     
 
 _search_query = RunnableBranch(
     # If input includes chat_history, we condense it with the follow-up question
@@ -112,11 +148,44 @@ _search_query = RunnableBranch(
     RunnableLambda(itemgetter("question")),
 )
 
+# # If the input is about the mensa menu of the day, we search for the menu
+#     (
+#         is_mensa_chain
+#         | ChatOpenAI(temperature=0)
+#         | StrOutputParser()
+#         # | RunnableLambda(lambda x: requests.get("https://en4gdf6m924yj.x.pipedream.net/" + x) or x)
+#         | RunnableLambda(lambda x: "yes" in x.lower() or "mensa" in x["question"].lower()),
+#         RunnableLambda(lambda _: requests.get("https://menu.tum.sexy/_next/data/b6k1mCvyQ9LCiKmF_t8Nd/de/mensa-garching.json?locale=de&id=mensa-garching"))
+#         | RunnableLambda(lambda x: json.loads(x.text))
+#         | RunnableLambda(lambda x: x["pageProps"]["foodPlaceMenu"]["weeks"])
+#         | RunnableLambda(lambda x: create_date_string(x))
+#         | RunnableLambda(lambda x: json.dumps(x, indent=4))
+#         | RunnableLambda(lambda x: mensa_prompt.format(context=x, day=datetime.datetime.today().strftime("%d.%m.%Y")))
+#         | RunnableLambda(lambda x: print(x) or x)
+#         | ChatOpenAI(temperature=0)
+#         | StrOutputParser(),
+#     ),
+
 _inputs = RunnableMap(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),
-        "context": _search_query | retriever | _combine_documents,
+        "context": RunnableBranch(
+            (
+                is_mensa_chain
+                | ChatOpenAI(temperature=0)
+                | StrOutputParser()
+                | RunnableLambda(lambda x: "yes" in x.lower() or "mensa" in x.lower()),
+                RunnableLambda(lambda _: requests.get("https://menu.tum.sexy/_next/data/b6k1mCvyQ9LCiKmF_t8Nd/de/mensa-garching.json?locale=de&id=mensa-garching"))
+                | RunnableLambda(lambda x: json.loads(x.text))
+                | RunnableLambda(lambda x: x["pageProps"]["foodPlaceMenu"]["weeks"])
+                | RunnableLambda(lambda x: create_date_string(x))
+                | RunnableLambda(lambda x: json.dumps(x, indent=4))
+                | RunnableLambda(lambda x: mensa_prompt.format(context=x, day=datetime.datetime.today().strftime("%Y-%m-%d")))
+                | RunnableLambda(lambda x: print(x) or x)
+            ),
+            _search_query | retriever | _combine_documents
+        ),
     }
 ).with_types(input_type=ChatHistory)
 
