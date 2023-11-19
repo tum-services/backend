@@ -34,7 +34,7 @@ class MessageInput(BaseModel):
 class ConversationInput(BaseModel):
     conversation: list[MessageInput]
     wizard_id: int | None
-    wizard_answers: list[str] | None
+    wizard_anwsers: list[str] | None
 
 
 
@@ -61,18 +61,18 @@ async def new_conv(conv: ConversationInput) -> dict:
     if conv.wizard_id is not None: 
         if wizards[conv.wizard_id] is None:
             raise HTTPException(status_code=404, detail="Wizard not found")
-        if len(wizards[conv.wizard_id]) != len(conv.wizard_answers):
+        if len(wizards[conv.wizard_id]) != len(conv.wizard_anwsers):
             raise HTTPException(status_code=404, detail="Wizard length not matching")
         con_summary.wizard = []
-        for i in range(len(conv.wizard_answers)):
+        for i in range(len(conv.wizard_anwsers)):
             wiz_obj = wizards[conv.wizard_id][i]
             wiz = Wizard()
             if wiz_obj["type"] == "text":
                 wiz.question = wiz_obj["question"]
-                wiz.answer = conv.wizard_answers[i]
+                wiz.answer = conv.wizard_anwsers[i]
             else:
                 wiz.question = wiz_obj["question"]
-                wiz.answer = wiz_obj["options"][int(conv.wizard_answers[i])]
+                wiz.answer = wiz_obj["options"][int(conv.wizard_anwsers[i])]
             con_summary.wizard.append(wiz)
     # c.save()
     con_summary.save()
