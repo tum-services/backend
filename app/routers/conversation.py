@@ -78,7 +78,7 @@ async def new_conv(conv: ConversationInput) -> dict:
 @router.get("/")
 async def get_convs():
     cs = ConversationSummary.collection.fetch()
-    return [c.to_dict() for c in cs].sort(key=lambda x: x["date"])
+    return [c.to_dict() for c in cs].sort(key=lambda x: x["date"], reverse=True)
 
 
 @router.delete("/{id}")
