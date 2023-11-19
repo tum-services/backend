@@ -7,7 +7,6 @@ from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 from .wizard import wizards
 
-
 router = APIRouter(
     prefix="/conversation",
     tags=["conversation"],
@@ -25,18 +24,17 @@ prompt_name = """Summarize the following conversation between an user and the as
             TITLE:
         """
 
+
 class MessageInput(BaseModel):
     content: str
-    author: str # User or Bot
+    author: str  # User or Bot
     created: str | None
-  
+
 
 class ConversationInput(BaseModel):
     conversation: list[MessageInput]
     wizard_id: int | None
     wizard_answers: list[str] | None
-
-
 
 
 @router.post("/", response_model=None)
@@ -47,8 +45,6 @@ async def new_conv(conv: ConversationInput) -> dict:
     for message in conv.conversation:
         sumconv += f"{'Assistant' if message.author == 'bot' else 'User'}: {message.content}\n:"
 
-
-    
     chain = LLMChain(llm=OpenAI(), prompt=PromptTemplate.from_template(prompt))
     summary = chain.run(sumconv)
 
@@ -58,7 +54,7 @@ async def new_conv(conv: ConversationInput) -> dict:
     con_summary = ConversationSummary()
     con_summary.summary = summary
     con_summary.title = title
-    if conv.wizard_id is not None: 
+    if conv.wizard_id is not None:
         if wizards[conv.wizard_id] is None:
             raise HTTPException(status_code=404, detail="Wizard not found")
         if len(wizards[conv.wizard_id]) != len(conv.wizard_answers):
@@ -81,5 +77,11 @@ async def new_conv(conv: ConversationInput) -> dict:
 
 @router.get("/")
 async def get_convs():
-    cs =  ConversationSummary.collection.fetch()
+    cs = ConversationSummary.collection.fetch()
     return [c.to_dict() for c in cs]
+
+
+@router.delete("/{id}")
+async def delete_convs(id: str):
+    ConversationSummary.collection.delete(id)
+    return {"status": "ok"}
