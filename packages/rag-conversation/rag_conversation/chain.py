@@ -169,7 +169,7 @@ PATTERN_ROOM = "room|räume"
 def get_mensa(text):
     if not re.search(PATTERN_MENSA, text, re.IGNORECASE):
         return None
-    return mensa_prompt.format(context=mensa_data_str, day=datetime.datetime.today().strftime("%d.%m.%Y"))
+    return mensa_prompt.format(context=mensa_data_str, day=datetime.datetime.today().strftime("%Y-%m-%d"))
 
 def get_room(text):
     if not re.search(PATTERN_ROOM, text, re.IGNORECASE):
@@ -202,23 +202,6 @@ def regex_content(text):
         return room
     return None
 
-# # If the input is about the mensa menu of the day, we search for the menu
-#     (
-#         is_mensa_chain
-#         | ChatOpenAI(temperature=0)
-#         | StrOutputParser()
-#         # | RunnableLambda(lambda x: requests.get("https://en4gdf6m924yj.x.pipedream.net/" + x) or x)
-#         | RunnableLambda(lambda x: "yes" in x.lower() or "mensa" in x["question"].lower()),
-#         RunnableLambda(lambda _: requests.get("https://menu.tum.sexy/_next/data/b6k1mCvyQ9LCiKmF_t8Nd/de/mensa-garching.json?locale=de&id=mensa-garching"))
-#         | RunnableLambda(lambda x: json.loads(x.text))
-#         | RunnableLambda(lambda x: x["pageProps"]["foodPlaceMenu"]["weeks"])
-#         | RunnableLambda(lambda x: create_date_string(x))
-#         | RunnableLambda(lambda x: json.dumps(x, indent=4))
-#         | RunnableLambda(lambda x: mensa_prompt.format(context=x, day=datetime.datetime.today().strftime("%d.%m.%Y")))
-#         | RunnableLambda(lambda x: print(x) or x)
-#         | ChatOpenAI(temperature=0)
-#         | StrOutputParser(),
-#     ),
 
 _inputs = RunnableMap(
     {
@@ -227,7 +210,8 @@ _inputs = RunnableMap(
         "context": RunnableBranch(
             (
                 RunnableLambda(lambda x: regex_content(x["question"]) is not None),
-                RunnableLambda(lambda x: regex_content(x["question"]))),
+                RunnableLambda(lambda x: regex_content(x["question"]))
+            ), 
             _search_query | retriever | _combine_documents
         ),
     }
