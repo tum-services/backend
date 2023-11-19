@@ -37,6 +37,7 @@ class Wizard(Model):
     answer = TextField()
 
 class ConversationSummary(Model):
+    date = DateTime(auto=True)
     title = TextField()
     summary = TextField()
     wizard = ListField(NestedModelField(Wizard))
