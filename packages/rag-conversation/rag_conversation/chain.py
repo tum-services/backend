@@ -154,26 +154,29 @@ def create_room_data_string(room_data, max=15):
     return ret
 
 
-mensa_data = json.loads(requests.get(
-    "https://tum-dev.github.io/eat-api/en/mensa-garching/2023/47.json").text)
-mensa_data_str = json.dumps(create_date_string(mensa_data), indent=4)
-
-datetime.datetime.today().strftime("%Y-%m-%d")
-
-room_data = json.loads(requests.get("https://iris.asta.tum.de/api/").text)["raeume"]
-room_data_str = json.dumps(create_room_data_string(room_data), indent=4)
-
 PATTERN_MENSA = "mensa|essen|food|meal|lunch|dinner|breakfast|frühstück|mittagessen|abendessen|essen|kantine|cafeteria|restaurant|essen"
 PATTERN_ROOM = "room|räume"
 
 def get_mensa(text):
     if not re.search(PATTERN_MENSA, text, re.IGNORECASE):
         return None
-    return mensa_prompt.format(context=mensa_data_str, day=datetime.datetime.today().strftime("%Y-%m-%d"))
+    today = datetime.datetime.today()
+    next_week = today + datetime.timedelta(days=7)
+    mensa_data = requests.get(f"https://tum-dev.github.io/eat-api/en/mensa-garching/{today.year}/{today.isocalendar()[1]}.json").json()
+    mensa_data_next = requests.get(f"https://tum-dev.github.io/eat-api/en/mensa-garching/{next_week.year}/{next_week.isocalendar()[1]}.json")
+    mensa_data_str = f"""
+        {json.dumps(create_date_string(mensa_data), indent=4)}\n
+        {json.dumps(create_date_string(mensa_data_next), indent=4)}
+    """
+    print(mensa_data_str)
+
+    return mensa_prompt.format(context=mensa_data_str, day=today.strftime("%Y-%m-%d"))
 
 def get_room(text):
     if not re.search(PATTERN_ROOM, text, re.IGNORECASE):
         return None
+    room_data = requests.get("https://iris.asta.tum.de/api/").json()["raeume"]
+    room_data_str = json.dumps(create_room_data_string(room_data), indent=4)
     return room_prompt.format(context=room_data_str)
 
 _search_query = RunnableBranch(
