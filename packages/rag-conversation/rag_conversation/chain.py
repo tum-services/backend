@@ -163,7 +163,7 @@ def get_mensa(text):
     today = datetime.datetime.today()
     next_week = today + datetime.timedelta(days=7)
     mensa_data = requests.get(f"https://tum-dev.github.io/eat-api/en/mensa-garching/{today.year}/{today.isocalendar()[1]}.json").json()
-    mensa_data_next = requests.get(f"https://tum-dev.github.io/eat-api/en/mensa-garching/{next_week.year}/{next_week.isocalendar()[1]}.json")
+    mensa_data_next = requests.get(f"https://tum-dev.github.io/eat-api/en/mensa-garching/{next_week.year}/{next_week.isocalendar()[1]}.json").json()
     mensa_data_str = f"""
         {json.dumps(create_date_string(mensa_data), indent=4)}\n
         {json.dumps(create_date_string(mensa_data_next), indent=4)}
